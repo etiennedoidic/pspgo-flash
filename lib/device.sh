@@ -80,11 +80,13 @@ dev_backup() {
   [ "$free" -gt $((need + 1048576)) ] || die "Not enough free space on this Mac for a backup ($(human $((need*1024))) needed)."
   head1 "Backup -> backups/$stamp"
   info "PSPGO ($(human $((need*1024)))): games, saves, settings"
+  mkdir -p "$dest/PSPGO"   # macOS rsync 2.6.9 won't create parent folders
   # shellcheck disable=SC2086
   rsync -rt $RSYNC_EXCLUDES "$PSPGO_VOL/" "$dest/PSPGO/"
   if sd_mounted; then
     info "PSPGoSD (without ISO/ unless --with-games)"
     local ex="--exclude ISO"; [ -n "$games" ] && ex=""
+    mkdir -p "$dest/PSPGoSD"
     # shellcheck disable=SC2086
     rsync -rt $RSYNC_EXCLUDES $ex "$PSPGOSD_VOL/" "$dest/PSPGoSD/"
   fi
