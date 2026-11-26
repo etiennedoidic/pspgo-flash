@@ -10,13 +10,16 @@ Format as FAT32/MBR on the Mac (`diskutil eraseDisk FAT32 PSPGOSD MBRFormat /dev
 
 ## USB-C with video out kept
 
+Step-by-step plan, parts and test list: [usb-c-plan.md](usb-c-plan.md).
+
+
 The Go has a single 28-pin multi-use connector that carries USB, power, audio and analog video. Kits that *replace* it lose TV out; the giltesa kit says so in its listing. So keep the original connector, and wire a USB-C receptacle in parallel to its power and USB pins only.
 
 Pinout source: [psdevwiki: PSP Go Jigkick](https://www.psdevwiki.com/psp/Psp_Go_Jigkick).
 
 | USB-C | Go pin | Signal | Note |
 | --- | --- | --- | --- |
-| VBUS | 22 | 5V input | Via a low-Vf Schottky / ideal diode (no backfeed from the stock charger) |
+| VBUS | 22 | 5V input | Via an ideal diode (LM66100) or low-Vf Schottky (no backfeed from the stock charger) |
 | VBUS via 10 kΩ | 20 | DET_5V_CRADLE | Enables the pin 22 input |
 | D+ | 26 | USB D+ | Short, twisted |
 | D− | 27 | USB D− | Short, twisted |
@@ -27,6 +30,8 @@ Pinout source: [psdevwiki: PSP Go Jigkick](https://www.psdevwiki.com/psp/Psp_Go_
 The video and audio pins stay on the original port and are untouched: 13 Pr/composite, 16 Y, 19 Pb, 5/8 audio L/R, 10 audio-out enable, 14/15 cable sense. Sony's PSP-N150 (composite), N170/N180 (component) and the N340 cradle keep working. For HDMI TVs, use a component-to-HDMI scaler.
 
 **Parts:** a 16-pin USB-C 2.0 receptacle/breakout, 2× 5.1 kΩ, 1× 10 kΩ (0402), a Schottky (SS14-class if it fits), 32–36 AWG enamelled wire, Kapton tape.
+
+Never let solder or wire touch pin 24 (SYSCON_TOH0): grounding it while off enters service mode.
 
 **Checks:**
 - [ ] Measure free space in the shell for the second port

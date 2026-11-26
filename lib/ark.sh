@@ -57,6 +57,8 @@ cipl_instructions() {
 }
 
 wpa2_instructions() {
-  onpsp "Press SELECT > Custom Firmware Settings. Turn on WPA2 if it's listed, then Restart VSH."
-  onpsp "Router: a 2.4 GHz network with WPA2-AES only (no WPA3 mixed mode, no TKIP)."
+  onpsp "XMB: Settings > Custom Firmware Settings (or ARK menu > Extras > Custom Firmware Settings). Turn on WPA2, then Restart VSH."
+  onpsp "Router: a 2.4 GHz network, WPA2 with AES only (TKIP doesn't work). Split bands if 2.4/5 GHz share one name."
+  onpsp "WPA2/WPA3 mixed mode often fails to get an IP: set the IP address manually in the PSP's network settings."
+  onpsp "While WPA2 is on, WEP and WPA1 networks stop working."
 }

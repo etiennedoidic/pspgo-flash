@@ -36,4 +36,7 @@ fw_instructions() {
   onpsp "Plug in the charger and keep it plugged in."
   onpsp "Game > System Storage > PSP Update ver 6.61 > follow the prompts. Don't power off."
   onpsp "When it restarts: Settings > System Settings > System Information should say 6.61."
+  say "  If the updater says the data is for another system, the file isn't the Go one. Either delete"
+  say "  downloads/$FW_FILE_NAME and put the PSP Go 6.61 EBOOT.PBP from consolemods.org there, or update"
+  say "  over Wi-Fi: Settings > System Update > Update via Internet (needs a WEP/WPA/open network on stock firmware)."
 }

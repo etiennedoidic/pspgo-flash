@@ -5,14 +5,43 @@ RSYNC_EXCLUDES="--exclude .Spotlight-V100 --exclude .fseventsd --exclude .Trashe
 go_mounted() { [ -d "$PSPGO_VOL/PSP" ]; }
 sd_mounted() { [ -d "$PSPGOSD_VOL" ]; }
 
+# If the default volume names aren't there, look for PSP volumes and remember them.
+dev_detect() {
+  go_mounted && return 0
+  is_mac || return 0
+  local v cands="" n
+  for v in /Volumes/*; do
+    if [ -d "$v/PSP" ] && [ "$v" != "$PSPGOSD_VOL" ]; then cands="$cands$v
+"; fi
+  done
+  cands=$(printf '%s' "$cands" | sed '/^$/d')
+  [ -n "$cands" ] || return 0
+  n=$(printf '%s\n' "$cands" | wc -l | tr -d ' ')
+  printf '\n'
+  if [ "$n" = 1 ]; then
+    confirm "Found $cands. Is that the Go's internal storage (not the memory card)?" y || return 0
+    PSPGO_VOL="$cands"
+  else
+    local IFS=$'\n'
+    PSPGO_VOL=$(choose "Found more than one PSP volume. Which is the Go's internal storage (about 16 GB)?" $cands)
+    for v in $cands; do
+      if [ "$v" != "$PSPGO_VOL" ]; then PSPGOSD_VOL="$v"; fi
+    done
+  fi
+  printf 'PSPGO_VOL="%s"\nPSPGOSD_VOL="%s"\n' "$PSPGO_VOL" "$PSPGOSD_VOL" > "$ROOT/config.local.sh"
+  ok "Using $PSPGO_VOL for the Go (saved in config.local.sh)"
+  return 0
+}
+
 # Wait (no typing needed) until the Go's storage shows up.
 dev_wait() {
+  dev_detect
   go_mounted && return 0
   onpsp "Connect the USB cable, then Settings > USB Connection."
   printf 'Waiting for %s ' "$PSPGO_VOL"
   local n=0
   until go_mounted; do
-    sleep 2; n=$((n+1)); printf '.'
+    sleep 2; n=$((n+1)); printf '.'; dev_detect
     [ $((n % 30)) -eq 0 ] && printf '\n  (still waiting; is USB Connection open on the Go?) '
   done
   sleep 2; printf '\n'; ok "PSP Go connected."
