@@ -56,6 +56,20 @@ games_add() {
       esac
     elif [ -d "$f" ] && [ -f "$f/EBOOT.PBP" ]; then
       rsync -rt "$f" "$LIBRARY/GAME/" && ok "library/GAME/$(basename "$f")"
+    elif [ -d "$f" ]; then
+      # A folder of downloads/dumps: pick up every .iso/.cso inside it
+      local found=0 img
+      while IFS= read -r img; do
+        [ -n "$img" ] || continue
+        cp "$img" "$LIBRARY/ISO/" && ok "library/ISO/$(basename "$img")"; found=1
+      done <<EOF2
+$(find "$f" -type f \( -iname '*.iso' -o -iname '*.cso' \) 2>/dev/null)
+EOF2
+      if [ "$found" = 0 ]; then
+        if find "$f" -iname '*.7z' -o -iname '*.rar' 2>/dev/null | grep -q .; then
+          warn "$f has only archives (.7z/.rar). Extract them first (e.g. The Unarchiver), then add again."
+        else warn "No .iso/.cso found in $f"; fi
+      fi
     else warn "Skipping $f"; fi
   done
   say "Copy to the Go with: bash pspgo-setup.sh games push"

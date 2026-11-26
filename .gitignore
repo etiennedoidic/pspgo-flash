@@ -1,5 +1,9 @@
 # Games and personal data never go in the repo
 library/
+games/
+*.7z
+*.rar
+*.zip
 *.iso
 *.ISO
 *.cso
