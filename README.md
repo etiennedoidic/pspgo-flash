@@ -47,16 +47,23 @@ bash pspgo-setup.sh push
 
 `profile/seplugins/PLUGINS.TXT` is **merged** into the Go's copy on push, so changes made in ARK's own plugin menu are kept.
 
-### Game library
+### Library: games, music, video, pictures
 
-`library/` is git-ignored, along with every `.iso`/`.cso` in the repo. Use your own disc dumps, PSN downloads and homebrew.
+`librarian.sh` manages what goes onto the Go. `library/` and `profile/media/` are git-ignored, along with every `.iso`/`.cso`/archive. Use your own disc dumps, PSN downloads and homebrew.
 
 ```bash
-bash pspgo-setup.sh games add ~/Dumps/MyGame.iso   # -> library/ISO/
-bash pspgo-setup.sh games push                     # -> PSPGoSD/ISO (or PSPGO if no card)
-bash pspgo-setup.sh games pull                     # back up what's on the Go into library/
-bash pspgo-setup.sh games list | space | remove NAME [--local]
+bash librarian.sh -a -g "games/My Game (USA)"   # add a game: ISO/CSO, EBOOT folder, or a .zip/.7z/.rar holding one
+bash librarian.sh -a -r -g ~/Dumps              # -r: every game in the folder and its subfolders
+bash librarian.sh -a -m ~/Music/Album           # music (folder name becomes the album)
+bash librarian.sh -a -v clip.mp4                # video (MP4)
+bash librarian.sh -a -p ~/Pictures/Trip         # pictures
+bash librarian.sh -a -r ~/Downloads/stuff       # no type: each file sorted by its format
+bash librarian.sh -l                            # list
+bash librarian.sh -d -g "My Game"               # remove from the Mac (asks first); add --device for the Go too
+bash librarian.sh --push                        # copy everything onto the Go
 ```
+
+Every file is checked by its header bytes before it's added: ISOs must be real PSP disc images with whole sectors, CSO/EBOOT/MP3/MP4/JPEG etc. must match their format, and programs or scripts are refused. Archives are listed first and refused if they'd write outside their folder.
 
 ## Studio
 

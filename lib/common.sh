@@ -30,6 +30,13 @@ info()  { printf '%s>%s %s\n' "$C" "$N" "$*"; }
 ok()    { printf '%s✓%s %s\n' "$G" "$N" "$*"; }
 warn()  { printf '%s!%s %s\n' "$Y" "$N" "$*" >&2; }
 die()   { printf '%s✗ %s%s\n' "$R" "$*" "$N" >&2; exit 1; }
+# todo "Heading" "step" "step" ... -- a numbered "do this now" box.
+todo() {
+  local h="$1" i=1 l; shift
+  printf '\n%s┌─ DO THIS NOW: %s%s\n' "$B$Y" "$h" "$N"
+  for l in "$@"; do printf '%s│%s  %d. %s\n' "$B$Y" "$N" "$i" "$l"; i=$((i+1)); done
+  printf '%s└─%s\n' "$B$Y" "$N"
+}
 onpsp() { printf '%s  [On the PSP]%s %s\n' "$B" "$N" "$*"; }
 
 # ---------- input ----------
@@ -69,6 +76,37 @@ state_set() {
   mv "$tmp" "$STATE_FILE"
 }
 state_done() { [ "$(state_get "$1")" = done ]; }
+
+# ---------- progress ----------
+# copy_progress DEST TOTAL_KB LABEL -- run in the background while a copy fills DEST.
+# The Mac's rsync 2.6.9 has no overall progress, so this measures DEST's size instead.
+copy_progress() {
+  local dest="$1" total="${2:-0}" label="${3:-Copying}" have pct bar start now el rate eta
+  [ "$total" -gt 0 ] 2>/dev/null || return 0
+  [ -t 2 ] || return 0
+  start=$(date +%s)
+  while :; do
+    have=$(du -sk "$dest" 2>/dev/null | cut -f1); have=${have:-0}
+    pct=$((have * 100 / total)); [ "$pct" -gt 100 ] && pct=100
+    bar=$(printf '%*s' $((pct / 4)) '' | tr ' ' '#')
+    now=$(date +%s); el=$((now - start)); eta="--"
+    if [ "$el" -gt 5 ] && [ "$have" -gt 0 ]; then
+      rate=$((have / el)); [ "$rate" -gt 0 ] && eta="$(( (total - have) / rate / 60 ))m$(( (total - have) / rate % 60 ))s"
+    fi
+    printf '\r  %s [%-25s] %3d%%  %s / %s  ETA %s   ' "$label" "$bar" "$pct" \
+      "$(human $((have * 1024)))" "$(human $((total * 1024)))" "$eta" >&2
+    sleep 2
+  done
+}
+# with_progress DEST TOTAL_KB LABEL -- COMMAND...   runs COMMAND with a progress bar.
+with_progress() {
+  local dest="$1" total="$2" label="$3" pid rc=0; shift 4
+  copy_progress "$dest" "$total" "$label" & pid=$!
+  "$@" || rc=$?
+  kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null || true
+  printf '\n' >&2
+  return $rc
+}
 
 # ---------- misc ----------
 need_cmds() { local c; for c in "$@"; do command -v "$c" >/dev/null || die "Missing tool: $c"; done; }

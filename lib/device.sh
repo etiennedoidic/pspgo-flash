@@ -37,8 +37,8 @@ dev_detect() {
 dev_wait() {
   dev_detect
   go_mounted && return 0
-  onpsp "Connect the USB cable, then Settings > USB Connection."
-  printf 'Waiting for %s ' "$PSPGO_VOL"
+  [ -n "$DEV_WAIT_QUIET" ] || todo "connect the Go" "Plug the Go into the Mac with its USB cable." "On the Go: Settings > USB Connection (press X)."
+  printf 'Waiting for the Go to appear on the Mac (I continue by myself) '
   local n=0
   until go_mounted; do
     sleep 2; n=$((n+1)); printf '.'; dev_detect
@@ -52,8 +52,7 @@ dev_require() { dev_wait; }
 dev_wait_gone() {
   go_mounted || return 0
   [ -n "$PSPGO_TEST" ] && return 0
-  warn "The Go is still mounted. Eject it in Finder (or close USB Connection on the Go)."
-  printf 'Waiting for the Go to disconnect '
+  printf 'Waiting for the Go to be ejected (I continue by myself) '
   while go_mounted; do sleep 2; printf '.'; done; printf '\n'
 }
 
@@ -63,10 +62,24 @@ dev_tag() {
   return 0
 }
 
+# eject_vol PATH LABEL -- eject, retry once, then say what's holding it.
+eject_vol() {
+  local v="$1" l="$2" err
+  [ -d "$v" ] || return 0
+  err=$(diskutil eject "$v" 2>&1) && { ok "Ejected $l"; return 0; }
+  sleep 3; mdutil -i off "$v" >/dev/null 2>&1 || true   # Spotlight often holds new volumes
+  err=$(diskutil eject "$v" 2>&1) && { ok "Ejected $l"; return 0; }
+  warn "Couldn't eject $l: ${err##*: }"
+  local who; who=$(lsof "$v" 2>/dev/null | awk 'NR>1{print $1}' | sort -u | tr '\n' ' ')
+  [ -n "$who" ] && warn "  In use by: $who(close those, or quit Finder windows on it)"
+  warn "  To force it: diskutil unmount force \"$v\""
+  return 0
+}
+
 dev_eject_all() {
   sync
-  sd_mounted && { diskutil eject "$PSPGOSD_VOL" >/dev/null 2>&1 && ok "Ejected PSPGoSD" || warn "Couldn't eject PSPGoSD"; }
-  go_mounted && { diskutil eject "$PSPGO_VOL" >/dev/null 2>&1 && ok "Ejected PSPGO" || warn "Couldn't eject PSPGO"; }
+  sd_mounted && eject_vol "$PSPGOSD_VOL" PSPGoSD
+  go_mounted && eject_vol "$PSPGO_VOL" PSPGO
   return 0
 }
 
@@ -82,13 +95,14 @@ dev_backup() {
   info "PSPGO ($(human $((need*1024)))): games, saves, settings"
   mkdir -p "$dest/PSPGO"   # macOS rsync 2.6.9 won't create parent folders
   # shellcheck disable=SC2086
-  rsync -rt $RSYNC_EXCLUDES "$PSPGO_VOL/" "$dest/PSPGO/"
+  with_progress "$dest/PSPGO" "$need" "PSPGO" -- rsync -rt $RSYNC_EXCLUDES "$PSPGO_VOL/" "$dest/PSPGO/"
   if sd_mounted; then
     info "PSPGoSD (without ISO/ unless --with-games)"
     local ex="--exclude ISO"; [ -n "$games" ] && ex=""
     mkdir -p "$dest/PSPGoSD"
     # shellcheck disable=SC2086
-    rsync -rt $RSYNC_EXCLUDES $ex "$PSPGOSD_VOL/" "$dest/PSPGoSD/"
+    local sdneed; sdneed=$(du -sk $([ -z "$games" ] && echo "-I ISO") "$PSPGOSD_VOL" 2>/dev/null | cut -f1)
+    with_progress "$dest/PSPGoSD" "${sdneed:-0}" "PSPGoSD" -- rsync -rt $RSYNC_EXCLUDES $ex "$PSPGOSD_VOL/" "$dest/PSPGoSD/"
   fi
   echo "$stamp" > "$BACKUPS/LATEST"
   ok "Backup done: backups/$stamp"

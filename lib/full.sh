@@ -17,6 +17,14 @@ full_setup() {
   say ""
   say "${B}PSP Go setup${N}: official 6.61 -> ARK-5 custom firmware -> your profile -> auto-push."
   say "Each step tells you exactly what to press on the Go. Safe to quit (Ctrl-C) and re-run."
+  say ""
+  say "  The whole path, so nothing is a surprise:"
+  say "    1. Back up the Go to this Mac"
+  say "    2. Update to Sony's 6.61   (on the Go: Game > System Storage > PSP Update)"
+  say "    3. Start ARK               (on the Go: Game > System Storage > FasterARK)   temporary until step 4"
+  say "    4. Make ARK permanent      (on the Go: Game > System Storage > CustomIPL)"
+  say "    5. Turn on WPA2 Wi-Fi, push your profile, turn on auto-push"
+  say "  Between steps the Go goes back and forth between USB Connection and the home screen."
 
   local s n=1 total
   total=$(echo $FULL_STEPS | wc -w | tr -d ' ')
@@ -57,10 +65,10 @@ step_firmware() {
   esac
   dev_require
   fw_stage
-  dev_eject_all; dev_wait_gone
+  dev_eject_all
   fw_instructions
-  info "Waiting for the Go to come back after the update (open USB Connection again when it's done)."
-  dev_wait
+  dev_wait_gone
+  DEV_WAIT_QUIET=1 dev_wait
   confirm "Does System Information now say 6.61?" y || die "Update didn't finish. Run 'bash pspgo-setup.sh full' to try again."
   fw_cleanup
   state_set firmware done
@@ -69,21 +77,23 @@ step_firmware() {
 step_ark() {
   dev_require
   ark_stage
-  dev_eject_all; dev_wait_gone
+  dev_eject_all
   ark_instructions
-  info "Waiting for the Go to come back (open USB Connection again after you've seen the ARK menu)."
-  dev_wait
+  dev_wait_gone
+  DEV_WAIT_QUIET=1 dev_wait
   if ark_present; then ok "ARK files detected on the Go."; fi
-  confirm "Did pressing SELECT show the ARK menu?" y || die "ARK didn't start. Re-run FasterARK on the Go, then: bash pspgo-setup.sh full"
+  confirm "Did ARK start? (pressing SELECT on the home screen opens the ARK menu)" y || die "ARK didn't start. Re-run FasterARK on the Go, then: bash pspgo-setup.sh full"
+  ok "ARK is running, but only until the next full power-off. Next step makes it permanent."
   state_set ark done
 }
 
 step_cipl() {
-  say "Making ARK permanent (survives power-off). Recommended after a short test."
-  if confirm "Do it now?" y; then
+  say "Right now ARK is temporary: a full power-off brings back plain 6.61 until you run FasterARK again."
+  say "CustomIPL fixes that: it makes the Go boot straight into ARK, every time."
+  if confirm "Make ARK permanent now?" y; then
     dev_eject_all
     cipl_instructions
-    pause "Press Enter when the Go has restarted with ARK."
+    pause "Press Enter when it has restarted and still shows ARK."
     state_set cipl done
   else
     state_set cipl_result later
@@ -95,11 +105,17 @@ step_cipl() {
 }
 
 step_wpa2() {
-  dev_eject_all
+  # ARK-5 has no on-screen switch for this: it's a line in SETTINGS.TXT on the Go.
+  dev_wait
+  local cur; cur=$(ark_setting_get wpa2)
+  if [ "$cur" = on ]; then ok "WPA2 is already on in ARK's settings."
+  else
+    ark_setting_set wpa2 on
+    onpsp "Restart the Go after this run so WPA2 takes effect."
+  fi
+  state_set wpa2_result "on (SETTINGS.TXT)"
   wpa2_instructions
-  local r
-  r=$(choose "Was a WPA2 option in Custom Firmware Settings?" "Yes, turned it on" "Not there" "Skip for now")
-  state_set wpa2_result "$r"
+  say "  You can do the Wi-Fi part any time later; the script carries on now."
   state_set wpa2 done
 }
 
@@ -110,7 +126,15 @@ step_profile() {
 }
 
 step_autosync() {
-  if is_mac && confirm "Push profile/ automatically whenever the Go is plugged in?" y; then
+  say "profile/ in this folder is your Go's setup kept on the Mac: themes, wallpapers, plugins,"
+  say "homebrew apps, music/videos/pictures, and saved Wi-Fi networks. 'push' copies it onto the Go."
+  say ""
+  say "Auto-push does that for you: whenever you open USB Connection on the Go, the Mac copies"
+  say "anything new or changed in profile/ onto it, then ejects it and shows a notification."
+  say "Handy if you add music or themes on the Mac: plug in, wait for the notification, done."
+  say "It only adds/updates files (never deletes from the Go), and ignores other USB drives."
+  say "Skip it if you'd rather push by hand (bash pspgo-setup.sh push). Change later: autosync on|off."
+  if is_mac && confirm "Turn on auto-push?" y; then
     state_set setup done
     autosync_cmd on
   fi

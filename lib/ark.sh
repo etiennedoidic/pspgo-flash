@@ -35,7 +35,7 @@ ark_copy_zip() {
 
 ark_stage() {
   fw_cleanup
-  ark_copy_zip "$(ark_fetch 'FasterARK_psp.*\.zip$' 'full')"
+  ark_copy_zip "$(ark_fetch 'FasterARK_psp(_lite)?\.zip$' 'full')"
   dev_tag
 }
 
@@ -45,20 +45,63 @@ ark_update_stage() {
 }
 
 ark_instructions() {
-  onpsp "Game > System Storage > FasterARK. The Go restarts into ARK."
-  onpsp "Press SELECT on the home screen. The ARK menu should appear."
-  onpsp "Until the CustomIPL step, ARK is temporary: after a full power-off, launch FasterARK again."
+  todo "start ARK-5 (about 1 minute)" \
+    "If PSPGO/PSPGoSD are still in Finder's sidebar, eject them there." \
+    "On the Go: press O to leave USB Connection." \
+    "Go to Game > System Storage > FasterARK. Let it run; the Go restarts into ARK." \
+    "Check: press SELECT on the home screen. The ARK menu should open." \
+    "Don't run CustomIPL yet; that's the next step." \
+    "Then Settings > USB Connection again, so I can check the files."
+  say "  Until the CustomIPL step, ARK is temporary: after a full power-off, run FasterARK again."
 }
 
 cipl_instructions() {
-  onpsp "Battery over 75% and charger plugged in."
-  onpsp "Game > System Storage > CustomIPL (cIPL Flasher) > press X to install."
-  onpsp "After restart: System Information > System Software should mention ARK."
+  todo "make ARK permanent (about 1 minute)" \
+    "If PSPGO/PSPGoSD are still in Finder's sidebar, eject them there." \
+    "On the Go: press O to leave USB Connection. Battery over 75%, charger plugged in." \
+    "Go to Game > System Storage > CustomIPL. Press X to install. Don't turn it off." \
+    "Turn the Go fully off (hold the power switch up ~5 s), then on again." \
+    "Check: System Information still mentions ARK. Then press Enter here."
+}
+
+# ARK keeps its settings in a text file on the Go, one per line: "always, NAME, on|off".
+ark_settings_file() { echo "$PSPGO_VOL/PSP/SAVEDATA/ARK_01234/SETTINGS.TXT"; }
+
+ark_setting_get() { # NAME -> on|off|"" (not listed)
+  grep -E "^[^#]*, *$1 *," "$(ark_settings_file)" 2>/dev/null | tail -1 | sed 's/.*, *//' | tr -d ' \r'
+}
+
+ark_setting_set() { # NAME on|off
+  local f; f=$(ark_settings_file)
+  [ -f "$f" ] || die "No ARK settings file on the Go ($f). Is ARK installed?"
+  cp "$f" "$f.bak"
+  if grep -qE "^[^#]*, *$1 *," "$f"; then
+    sed -E "s/^([^#]*, *$1 *, *).*/\1$2/" "$f.bak" > "$f"
+  else
+    printf 'always, %s, %s\n' "$1" "$2" >> "$f"
+  fi
+  ok "ARK setting $1 = $2"
+}
+
+# bash pspgo-setup.sh ark-settings [list | set NAME on|off]
+ark_settings_cmd() {
+  dev_require
+  local f; f=$(ark_settings_file)
+  [ -f "$f" ] || die "No ARK settings file on the Go ($f). Is ARK installed?"
+  case "${1:-list}" in
+    list) head1 "ARK settings (PSPGO/PSP/SAVEDATA/ARK_01234/SETTINGS.TXT)"; sed 's/^/  /' "$f" ;;
+    set)  [ -n "${2:-}" ] && [ -n "${3:-}" ] || die "Usage: ark-settings set NAME on|off"
+          ark_setting_set "$2" "$3"
+          onpsp "Takes effect after a restart of the Go (or Restart VSH)." ;;
+    *) die "Usage: bash pspgo-setup.sh ark-settings [list | set NAME on|off]" ;;
+  esac
 }
 
 wpa2_instructions() {
-  onpsp "XMB: Settings > Custom Firmware Settings (or ARK menu > Extras > Custom Firmware Settings). Turn on WPA2, then Restart VSH."
-  onpsp "Router: a 2.4 GHz network, WPA2 with AES only (TKIP doesn't work). Split bands if 2.4/5 GHz share one name."
-  onpsp "WPA2/WPA3 mixed mode often fails to get an IP: set the IP address manually in the PSP's network settings."
-  onpsp "While WPA2 is on, WEP and WPA1 networks stop working."
+  todo "join a WPA2 network" \
+    "Router: a 2.4 GHz network with WPA2-AES (no TKIP, no WPA3 mixed). Split bands if 2.4/5 GHz share one name." \
+    "On the Go: Settings > Network Settings > Infrastructure Mode > New Connection > Scan." \
+    "Pick your network, choose WPA-PSK (AES) if it asks, type the password, Easy/automatic address." \
+    "Test Connection at the end."
+  say "  While WPA2 is on, WEP/WPA1 networks stop working. If it can't get an IP, set the IP manually."
 }

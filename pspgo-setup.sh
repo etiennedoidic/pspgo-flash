@@ -14,6 +14,7 @@
 #   bash pspgo-setup.sh firmware        stage Sony's official 6.61 update
 #   bash pspgo-setup.sh ark             stage FasterARK (ARK-5 installer)
 #   bash pspgo-setup.sh ark-update      stage the latest ARK updater
+#   bash pspgo-setup.sh ark-settings [list | set NAME on|off]   ARK's SETTINGS.TXT (wpa2, cpuclock...)
 #   bash pspgo-setup.sh autosync on|off|run   push automatically when the Go is plugged in
 #
 #   Themes and plugins
@@ -47,6 +48,7 @@ case "$cmd" in
   firmware)    dev_require; fw_stage; dev_eject_all; fw_instructions ;;
   ark)         dev_require; ark_stage; dev_eject_all; ark_instructions ;;
   ark-update)  dev_require; ark_update_stage; dev_eject_all ;;
+  ark-settings) ark_settings_cmd "$@" ;;
   autosync)    autosync_cmd "$@" ;;
   themes)      themes_cmd "$@" ;;
   wallpaper)   wallpaper_cmd "$@" ;;
