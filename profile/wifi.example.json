@@ -1,0 +1,5 @@
+{
+  "networks": [
+    { "ssid": "PSP-2G", "password": "change-me", "security": "wpa2-aes" }
+  ]
+}

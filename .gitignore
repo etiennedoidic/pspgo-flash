@@ -1,0 +1,22 @@
+# Games and personal data never go in the repo
+library/
+*.iso
+*.ISO
+*.cso
+*.CSO
+backups/
+downloads/
+logs/
+profile/wifi.json
+profile/media/**
+!profile/media/*/
+!profile/media/*/.gitkeep
+
+# Local state
+.state
+.state.tmp
+.autosync.lock/
+config.local.sh
+.DS_Store
+._*
+__pycache__/

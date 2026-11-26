@@ -1,0 +1,4 @@
+# ARK plugin list, merged into ef0:/SEPLUGINS/PLUGINS.TXT on push.
+# Format: runlevel, path, on|off   (runlevel: vsh, game, pops, all, or a game ID)
+# Enable CXMB themes after `bash pspgo-setup.sh cxmb install ZIP`:
+# vsh, ef0:/SEPLUGINS/cxmb/cxmb.prx, on
