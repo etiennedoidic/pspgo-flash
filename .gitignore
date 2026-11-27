@@ -1,6 +1,8 @@
 # Games and personal data never go in the repo
 library/
 games/
+links.txt
+.chrome-profile/
 *.7z
 *.rar
 *.zip
