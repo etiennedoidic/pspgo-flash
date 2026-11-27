@@ -18,32 +18,7 @@ PAUSE_SECONDS = 5
 
 # Example pages. Same Download button on each.
 LINKS = [
-   "https://vimm.net/vault/28140",
-   "https://vimm.net/vault/28329",
-   "https://vimm.net/vault/23720",
-   "https://vimm.net/vault/23764",
-   "https://vimm.net/vault/27745",
-   "https://vimm.net/vault/23783",
-   "https://vimm.net/vault/27734",
-   "https://vimm.net/vault/28061",
-   "https://vimm.net/vault/23766",
-   "https://vimm.net/vault/24023",
-   "https://vimm.net/vault/23818",
-   "https://vimm.net/vault/23758",
-   "https://vimm.net/vault/28344",
-   "https://vimm.net/vault/29410",
-   "https://vimm.net/vault/24081",
-   "https://vimm.net/vault/24199",
-   "https://vimm.net/vault/23918",                          
-   "https://vimm.net/vault/27748",
-   "https://vimm.net/vault/23825",
-   "https://vimm.net/vault/27762",
-   "https://vimm.net/vault/23749",
-   "https://vimm.net/vault/24183",
-   "https://vimm.net/vault/23828",
-   "https://vimm.net/vault/23725",
-   "https://vimm.net/vault/27748",
-   "https://vimm.net/vault/28142",
+   "example.com",
 ]
 
 
